@@ -8,7 +8,7 @@ Este proyecto está diseñado para retar tus habilidades, motivarte a explorar e
 Tu misión es desarrollar un sistema de IA compuesto por:
 1. **Un Microservicio Orquestador** que identifique las intenciones del usuario y delegue tareas.
 2. **Un Microservicio Asistente** que implemente tres funcionalidades clave:
-   - Recuperación Aumentada y Generación (RAG) con base en los libros de la base documental de educación financiera (carpeta **data**), que deberan ser almacenados en una base vectorial (libre elección)
+   - Recuperación Aumentada y Generación (RAG) con base en los libros de la base documental de educación financiera [(carpeta **data**)](https://github.com/basaravia/reto-asistente-2025-q1/tree/main/data), que deberan ser almacenados en una base vectorial (libre elección)
    - Análisis de un **estado de cuenta** PDF subido por el usuario para analizar gastos. 
         - Muestra top 5 de mayores gastos
         - Agrupa y contabiliza los gastos recurrentes (mismo establlecimiento) muestra top 3 de gastos recurrentes
