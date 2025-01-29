@@ -1,4 +1,5 @@
 services:
+  #CREACION DE BASE VECTORIAL.
   weaviate:
     image: semitechnologies/weaviate:latest
     ports:
@@ -20,5 +21,16 @@ services:
     environment:
       ENABLE_CUDA: 0
 
+  flask-assistant:
+    build:
+      context: ./assistant
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./assistant:/app
+    depends_on:
+      - weaviate
+  
 volumes:
   weaviate_data:
