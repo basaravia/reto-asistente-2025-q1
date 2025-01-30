@@ -26,9 +26,12 @@ services:
       context: ./assistant
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "5001:5000"
     volumes:
       - ./assistant:/app
+    environment:
+      FLASK_ENV: development
+      PYTHONUNBUFFERED: 1 
     depends_on:
       - weaviate
   
