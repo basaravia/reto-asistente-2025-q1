@@ -1,7 +1,9 @@
 from flask import Flask
 from flask_restful import Api
 
-from adapters import AnalyzePdfAdapter, RagAdapter, ShoppingAdvisorAdapter
+from adapters.AnalyzePdfAdapter import AnalyzePdfAdapter
+from adapters.RagAdapter import RagAdapter
+from adapters.ShoppingAdvisorAdapter import ShoppingAdvisorAdapter
 
 app = Flask(__name__)
 api = Api(app)

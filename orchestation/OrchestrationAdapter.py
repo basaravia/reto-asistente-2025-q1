@@ -9,7 +9,11 @@ class OrchestrationAdapter(Resource):
         self.orchestation_controller = orchestration_controller
         
     def post(self):
-        data = request.get_json()
-        query = data.get("query", None)
-        response = self.orchestation_controller.service_execute(query)
+        data = self._getBody(request)
+        response = self.orchestation_controller.service_execute(data['query'])
+
         return {"response": response}
+    
+    def _getBody(self, request):
+        body = request.get_json()
+        return body
