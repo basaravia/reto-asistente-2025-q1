@@ -4,12 +4,12 @@ class AssistantService:
     def __init__(self, base_url):
         self.base_url = base_url
 
-    def post_request(self, endpoint, data=None):
+    def post_request(self, endpoint, data):
         """Envía una solicitud POST a la API"""
         url = f"{self.base_url}{endpoint}"
-        
+        headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(url, json=data)
+            response = requests.post(url, json=data, headers=headers)
             
             # Verificar si la solicitud fue exitosa
             if response.status_code == 200:
