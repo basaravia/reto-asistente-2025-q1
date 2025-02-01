@@ -5,8 +5,11 @@ from werkzeug.utils import secure_filename
 from chunking import Chunking
 from Weaviate import delete_all_textos_pdf, send_all_pdfs_to_weaviate, delete_textos_pdf_class, create_textos_pdf_class,get_context
 from threading import Thread
-app = Flask(__name__)
+from graph import GraphWorkflow
+from datetime import datetime
 
+app = Flask(__name__)
+pipeline = GraphWorkflow()
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -55,7 +58,8 @@ def assistant_rag():
     
     response = {
         "query": query,
-        "response": f"Aquí tienes información relevante sobre: {get_context(query)}"
+        "response": f"{pipeline.invoke({'input': query})}",
+        "timestamp":datetime.now().isoformat() 
     }
     return jsonify(response)
 

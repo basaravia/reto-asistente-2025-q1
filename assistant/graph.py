@@ -3,6 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph
 from typing import Dict, TypedDict
 from langchain_core.output_parsers import StrOutputParser
+from Weaviate import get_context
 
 class GraphState(TypedDict):
     input: str
@@ -11,112 +12,101 @@ class GraphState(TypedDict):
     refined_query: str
     context: str
     final_output: str
+    pdf: str
+    num_pag: str
 
-llm = ChatOllama(model="deepseek-r1:8b")
-def call_model(system: str, dictionary:dict)->str:
-    output_parser = StrOutputParser()
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system),
-        ("user", "{user_input}")
-    ])
-    chain = prompt | llm | output_parser
-    return chain.invoke(dictionary).split("</think>")[1].strip()
-# Nodo 1: Guardrail -> Filtra temas bancarios y monetarios
-def guardrail(state: GraphState) -> Dict:
-    query = state["input"]
-    inTopic = call_model("""Eres un modelo capaz de identificar si existen respuestas dentro de un tópico. Este Tópico se refiere a temas bancarios y monetarios
-                 por lo que quiero que me digas si este query forma parte del este topico o no, Unicamente debes responder con SI o NO sin entregar ninguna explicación extra
-                 evalua: cantidad de crédito disponible""",{"user_input": query})
-    if "si" in inTopic.lower():
-        return {"is_valid": True} 
-    else:
-        return {"is_valid": False, "final_output": "❌ Consulta rechazada: No es un tema bancario o monetario."}  # Termina en "end"
+class GraphWorkflow:
+    def __init__(self):
+        self.llm = ChatOllama(model="deepseek-r1:8b", base_url="http://host.docker.internal:11434")
+        self.workflow = StateGraph(GraphState)
+        self._setup_workflow()
 
-# Nodo 2: Toxicity -> Evalúa si el mensaje es tóxico
-def toxicity(state: GraphState) -> Dict:
-    query = state["input"]
-    tox = call_model("""eres un modelo que verifica si existe toxicidad en un mensaje, es decir malas palabras, malas intenciones, o desagrado y desprestigio
-en caso de que en la entrada del encuentres algo de lo mencionado anteriormente responde SI o en caso de no encontrar nada fuera de lo común responde NO. No entregues ningun contexto extra unicamente SI o NO.""",{"user_input": query})
-    if "si" in tox.lower():
-        return {"is_toxic": True, "final_output": "❌ Consulta rechazada: Contiene lenguaje inapropiado."}  # Termina en "end"
-    else:
-        return {"is_toxic": False}  # Sigue al nodo "rewriter"
+    def call_model(self, system: str, dictionary: dict) -> str:
+        output_parser = StrOutputParser()
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system),
+            ("user", "{user_input}")
+        ])
+        chain = prompt | self.llm | output_parser
+        return chain.invoke(dictionary).split("</think>")[1].strip()
 
-# Nodo 3: Rewriter -> Reescribe la consulta para mejorar la estructura
-def rewriter(state: GraphState) -> Dict:
-    query = state["input"]
-    refined_query =  call_model("""Mejora la estructura de la consulta del usuario consulta sin cambiar su significado con el objetivo de que funcione mejor en un sistema RAG.
-                                No quiero ningun contexto extra solo entrega directamente el resultado de la mejora""",{"user_input": query})
-    return {"refined_query": refined_query}
+    def guardrail(self, state: GraphState) -> Dict:
+        query = state["input"]
+        inTopic = self.call_model("""Eres un modelo capaz de identificar si existen respuestas dentro de un tópico. Este Tópico se refiere a temas bancarios y monetarios
+                     por lo que quiero que me digas si este query forma parte del este topico o no, Unicamente debes responder con SI o NO sin entregar ninguna explicación extra
+                     evalua el user_input""", {"user_input": query})
+        if "si" in inTopic.lower():
+            return {"is_valid": True}
+        else:
+            return {"is_valid": False, "final_output": "Consulta rechazada: No es un tema bancario o monetario."}
 
-# Función RAG Dummy (Devuelve contexto fijo)
-def rag_dummy(query: str) -> str:
-    return "la tasa de interés es del 200%"
+    def toxicity(self, state: GraphState) -> Dict:
+        query = state["input"]
+        tox = self.call_model("""Eres un modelo que verifica si existe toxicidad en un mensaje, es decir malas palabras, malas intenciones, o desagrado y desprestigio
+        en caso de que en la entrada del encuentres algo de lo mencionado anteriormente responde SI o en caso de no encontrar nada fuera de lo común responde NO. No entregues ningun contexto extra unicamente SI o NO.""", {"user_input": query})
+        if "si" in tox.lower():
+            return {"is_toxic": True, "final_output": "Consulta rechazada: Contiene lenguaje inapropiado."}
+        else:
+            return {"is_toxic": False}
 
-# Nodo 4: RAG -> Usa la función dummy para recuperar contexto
-def rag_node(state: GraphState) -> Dict:
-    refined_query = state["refined_query"]
-    context = rag_dummy(refined_query)
-    response = call_model("""En base a este contexto:<contexto>{contexto}</contexto> quiero que respondas de manera formal y directa al usuario sobre su duda, en caso de no ser posible debes responder que no tienes suficiente información. sin ningun texto extra es decir sin introduccion, presentación o despedida, Recuerda siempre escribir tu respuesta en español""",
-                          {"user_input": query,"contexto":context})
-    return {"context": context, "final_output": response}
+    def rewriter(self, state: GraphState) -> Dict:
+        query = state["input"]
+        refined_query = self.call_model("""Mejora la estructura de la consulta del usuario consulta sin cambiar su significado con el objetivo de que funcione mejor en un sistema RAG.
+                                    No quiero ningun contexto extra. solo entrega directamente el resultado de la mejora en una sola linea es decir sin saltos de linea. Recuerda no dar ninguna introduccion ni nada más que la respuesta""", {"user_input": query})
+        return {"refined_query": refined_query.replace("\n", " ")}
 
-# Nodo Final: Verifica el idioma de la respuesta y la traduce si es necesario
-def end_node(state: GraphState) -> Dict:
-    final_answer = state.get("final_output", "Error: No se generó una respuesta.")
-    return {"final_output": final_answer}
+    def rag_node(self, state: GraphState) -> Dict:
+        refined_query = state["refined_query"]
+        context,pdf,numpag = get_context(refined_query)
+        response = self.call_model("""En base a este contexto:<contexto>{contexto}</contexto> quiero que respondas de manera formal y directa al usuario sobre su duda, en caso de no ser posible debes responder que no tienes suficiente información. sin ningun texto extra es decir sin introduccion, presentación o despedida, Recuerda siempre escribir tu respuesta en español""",
+                              {"user_input": refined_query, "contexto": context})
+        return {"context": context, "final_output": response, "pdf": pdf, "num_pag": int(numpag)}
 
-# Crear el grafo con LangGraph
-workflow = StateGraph(GraphState)
+    def end_node(self, state: GraphState) -> Dict:
+        final_answer = state.get("final_output", "Error: No se generó una respuesta.")
+        
+        num_pag = str(state.get("num_pag", 0))
+        pdf = state.get("pdf", "Sin PDF")
 
-# Agregar nodos
-workflow.add_node("guardrail", guardrail)
-workflow.add_node("toxicity", toxicity)
-workflow.add_node("rewriter", rewriter)
-workflow.add_node("rag", rag_node)
-workflow.add_node("end", end_node)
+        extra_info = f" Página: {num_pag} PDF: {pdf}" if (pdf != "Sin PDF" and "No se generó" not in final_answer) else ""
 
-# Definir conexiones entre nodos
-workflow.add_edge("guardrail", "toxicity")
-workflow.add_edge("toxicity", "rewriter")
-workflow.add_edge("rewriter", "rag")
-workflow.add_edge("rag", "end")
+        return {"final_output": final_answer + extra_info}
+    def guardrail_condition(self, state):
+        if state.get("is_valid"):
+            return "toxicity"
+        else:
+            return "end"
 
-# Función condicional para Guardrail
-def guardrail_condition(state):
-    if state.get("is_valid"):
-        return "toxicity"
-    else:
-        return "end"
+    def toxicity_condition(self, state):
+        if state.get("is_toxic"):
+            return "end"
+        else:
+            return "rewriter"
 
-# Función condicional para Toxicity
-def toxicity_condition(state):
-    if state.get("is_toxic"):
-        return "end"
-    else:
-        return "rewriter"
+    def _setup_workflow(self):
+        self.workflow.add_node("guardrail", self.guardrail)
+        self.workflow.add_node("toxicity", self.toxicity)
+        self.workflow.add_node("rewriter", self.rewriter)
+        self.workflow.add_node("rag", self.rag_node)
+        self.workflow.add_node("end", self.end_node)
 
-# Agregar transiciones condicionales
-workflow.add_conditional_edges("guardrail", guardrail_condition)
-workflow.add_conditional_edges("toxicity", toxicity_condition)
+        self.workflow.add_edge("guardrail", "toxicity")
+        self.workflow.add_edge("toxicity", "rewriter")
+        self.workflow.add_edge("rewriter", "rag")
+        self.workflow.add_edge("rag", "end")
 
-# Definir el nodo inicial
-workflow.set_entry_point("guardrail")
+        self.workflow.add_conditional_edges("guardrail", self.guardrail_condition)
+        self.workflow.add_conditional_edges("toxicity", self.toxicity_condition)
 
-# Compilar el grafo
-app = workflow.compile()
+        self.workflow.set_entry_point("guardrail")
+        self.app = self.workflow.compile()
 
-# Ejecutar el flujo con una consulta válida
-query = {"input": "¿Cuáles son las tasas de interés actuales en los bancos?"}
-response = app.invoke(query)
-print(response.get("final_output", "Error: No se generó respuesta."))
+    def invoke(self, query: Dict) -> str:
+        response = self.app.invoke(query)
+        return response.get("final_output", "Error: No se generó respuesta.")
 
-# # Prueba con una consulta no válida (fuera del tema)
-# query = {"input": "¿Cuál es la mejor receta para hacer pizza?"}
-# response = app.invoke(query)
-# print(response.get("final_output", "Error: No se generó respuesta."))
-
-# # Prueba con una consulta tóxica
-# query = {"input": "Malditos bancos siempre roban el dinero"}
-# response = app.invoke(query)
-# print(response.get("final_output", "Error: No se generó respuesta."))
+# if __name__ == "__main__":
+#     graph_workflow = GraphWorkflow()
+#     query = {"input": "¿Cuáles son las tasas de interés actuales en los bancos?"}
+#     response = graph_workflow.invoke(query)
+#     print(response)

@@ -157,17 +157,15 @@ def get_context(query: str):
         # Validar que TextosPdf no esté vacío
         textos_pdf = data.get("data", {}).get("Get", {}).get("TextosPdf", [])
         if not textos_pdf:
-            return "No se encontraron resultados para la consulta."
-
-        # Extraer información del primer resultado
+            return "No se encontraron resultados para la consulta.",0,0
         info = textos_pdf[0]
         chunk = info.get("chunk", "Sin información de chunk")
         nombre_pdf = info.get("nombrePdf", "Desconocido")
         num_pagina = info.get("numPagina", "Desconocido")
-
-        return f"Chunk: {chunk}\nPDF: {nombre_pdf}\nPágina: {num_pagina}"
+        return chunk, nombre_pdf, num_pagina
+    #    return f"Chunk: {chunk}\nPDF: {nombre_pdf}\nPágina: {num_pagina}"
 
     except requests.exceptions.RequestException as e:
-        return f"Error al conectar con Weaviate: {e}"
+        return f"Error al conectar con Weaviate: {e}",0,0
     except Exception as e:
-        return f"Error procesando la respuesta: {e}"
+        return f"Error procesando la respuesta: {e}",0,0
