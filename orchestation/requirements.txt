@@ -1,0 +1,5 @@
+flask
+flask_restful
+semantic-router==0.0.72
+transformers==4.46.3
+torch==2.5.1
