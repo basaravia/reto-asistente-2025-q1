@@ -1,5 +1,8 @@
 from flask import Flask
 from flask_restful import Api
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from adapters.AnalyzePdfAdapter import AnalyzePdfAdapter
 from adapters.RagAdapter import RagAdapter
