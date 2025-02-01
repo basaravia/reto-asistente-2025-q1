@@ -9,7 +9,7 @@ class OrchestrationController():
     def __init__(self):
 
         self.sr_router = RouteLayer.from_json("utils/semantic_router.json")
-        self.assistant_service = AssistantService()
+        self.assistant_service = AssistantService("http://127.0.0.1:5000")
 
     def service_execute(self, query):
         intention = self.sr_router(query).name

@@ -2,10 +2,9 @@ import requests
 
 class AssistantService:
     def __init__(self, base_url):
-        #self.base_url = base_url
-        self.base_url = "http://127.0.0.1:5000"
+        self.base_url = base_url
 
-    def post_request(self, endpoint, data, headers=None):
+    def post_request(self, endpoint, data=None, headers=None):
         """Envía una solicitud POST a la API"""
         url = f"{self.base_url}{endpoint}"
         
