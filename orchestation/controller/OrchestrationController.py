@@ -39,5 +39,5 @@ class OrchestrationController():
 
         logging.info("Intención procesada: '%s', Endpoint seleccionado: '%s'", intention, endpoint)
         
-        response = self.assistant_service.post_request(endpoint)    
+        response = self.assistant_service.post_request(endpoint, {"query": query})    
         return response

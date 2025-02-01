@@ -9,10 +9,13 @@ class RagAdapter(Resource):
         self.rag_controller = RagController()
 
     def post(self):
+        print("ENTRE AL POST DE RAG")
         data = self._getBody(request)
+        print("data: ", data)
         response = self.rag_controller.service_execute(data['query'])
         return {"response": response}
     
     def _getBody(self, request):
         body = request.get_json()
+        print("Body: ", body)
         return body
