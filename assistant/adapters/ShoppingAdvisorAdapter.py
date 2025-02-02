@@ -9,10 +9,10 @@ class ShoppingAdvisorAdapter(Resource):
         self.shopping_advisor_controller = ShoppingAdvisorController()
 
     def post(self):
-        data = self._getBody(request)
-        response = self.shopping_advisor_controller.service_execute(data['query'])
-        return response
-    
+        query = self._getBody(request)
+        response = self.shopping_advisor_controller.service_execute(query)
+        return {"assistant_response": response}
+
     def _getBody(self, request):
         body = request.get_json()
-        return body
+        return body['query']

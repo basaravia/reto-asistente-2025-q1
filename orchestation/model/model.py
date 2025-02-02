@@ -14,7 +14,13 @@ class Model():
         self.prompt = PromptTemplate.from_template(prompt)
 
     def __configurateModel(self):
-        return ChatGoogleGenerativeAI(model="gemini-2.0-flash-exp", google_api_key=GEMINI_API_KEY)
+        return ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash-exp",
+            google_api_key=GEMINI_API_KEY,
+            temperature=0.6,         
+            top_p=0.8,
+            top_k=40
+        )
 
     def invoke(self, variables):
         full_prompt = self.prompt.invoke(variables)

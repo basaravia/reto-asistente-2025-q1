@@ -11,7 +11,7 @@ class AnalyzePdfAdapter(Resource):
     def post(self):
         query, pdf64 = self._getBody(request)
         response = self.analyze_pdf_controller.service_execute(query, pdf64)
-        return {"response": response}
+        return {"assistant_response": response}    
     
     def _getBody(self, request):
         body = request.get_json()

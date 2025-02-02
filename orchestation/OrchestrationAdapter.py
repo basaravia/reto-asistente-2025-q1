@@ -19,5 +19,3 @@ class OrchestrationAdapter(Resource):
         pdf_encode = body.get('pdf_encode', None)
         query = body.get('query', None)
         return query, pdf_encode
-
-        
