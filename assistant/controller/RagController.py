@@ -2,12 +2,12 @@ from model.model import Model
 from service.RagService import RagService
 from utils.PromptManager import PromptManager
 
+prompt_manager = PromptManager()
 
 class RagController():
     def __init__(self):
         self.llm = Model()
         self.rag_service = RagService()
-        prompt_manager = PromptManager()
         self.prompt = prompt_manager.get_prompt("rag_prompt")
         self._set_prompt()
 
