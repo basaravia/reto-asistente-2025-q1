@@ -6,3 +6,7 @@ sentence-transformers==3.3.1
 python-dotenv
 langchain_community
 google-search-results
+fitz
+PyMuPDF
+PyPDF2
+ocrmypdf

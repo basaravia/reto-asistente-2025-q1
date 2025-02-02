@@ -17,7 +17,7 @@ class Model():
         return ChatGoogleGenerativeAI(
             model="gemini-2.0-flash-exp",
             google_api_key=GEMINI_API_KEY,
-            temperature=0.2,         
+            temperature=0.7,         
             top_p=0.8,
             top_k=40
         )
@@ -30,5 +30,6 @@ class Model():
 
     def invoke(self, variables):
         full_prompt = self.prompt.invoke(variables)
+        print("PROMPT COMPELTO: ", full_prompt)
         response = self.llm.invoke(full_prompt)
         return response.content
