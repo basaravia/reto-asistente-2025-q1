@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import os
-import PyPDF2
 from werkzeug.utils import secure_filename
+from pdfReader.GetPdfDataframe import GetPdfDataframe
 from chunking import Chunking
 from Weaviate import delete_all_textos_pdf, send_all_pdfs_to_weaviate, delete_textos_pdf_class, create_textos_pdf_class,get_context
 from threading import Thread
@@ -65,7 +65,6 @@ def assistant_rag():
 
 @app.route('/assistant/analyze-pdf', methods=['POST'])
 def analyze_pdf():
-    """Analiza un archivo PDF y extrae su contenido."""
     if 'file' not in request.files:
         return jsonify({"error": "No se envió ningún archivo"}), 400
     
@@ -76,16 +75,13 @@ def analyze_pdf():
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
-    
-    # Extraer texto del PDF
-    text = ""
-    with open(filepath, "rb") as pdf_file:
-        reader = PyPDF2.PdfReader(pdf_file)
-        for page in reader.pages:
-            text += page.extract_text() + "\n"
-    
-    return jsonify({"filename": filename, "content": text})
-
+    try:
+        pdf = GetPdfDataframe(filepath)
+        gastos,entradas,visitas=pdf.getTables()
+        resumen = pdf.resumen(modelo=pipeline.llm,user_input="Resúmenes de gastos y entradas")
+        return jsonify({"gastos":gastos,"filename": resumen,"entradas":entradas,"visitas":visitas}), 200
+    except Exception as e:
+        return jsonify({"Error": "Asegurate de enviar un pdf de un estado de cuenta de Banco Pichincha"}), 500
 @app.route('/assistant/shopping-advisor', methods=['POST'])
 def shopping_advisor():
     """Asesor de compras basado en preferencias del usuario."""
