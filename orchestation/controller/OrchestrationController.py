@@ -14,12 +14,12 @@ URL_ASSISTANT = "http://127.0.0.1:5000"
 
 class OrchestrationController():
     def __init__(self):
-        self.sr_router = RouteLayer.from_json(FILE_PATH)
+        #self.sr_router = RouteLayer.from_json(FILE_PATH)
         self.assistant_service = AssistantService(URL_ASSISTANT)
         self.prompt_manager = PromptManager()
         self.guadrail = Model(self.prompt_manager.get_prompt())
 
-    def service_execute(self, query):
+    def service_execute(self, query, pdfbase64):
         intention = self.guadrail.invoke({"query": query})
         logging.info("Guadrail: '%s'", intention)
         if intention.strip().lower() == 'toxico':
@@ -39,5 +39,5 @@ class OrchestrationController():
 
         logging.info("Intención procesada: '%s', Endpoint seleccionado: '%s'", intention, endpoint)
         
-        response = self.assistant_service.post_request(endpoint, {"query": query})    
+        response = self.assistant_service.post_request(endpoint, query, pdfbase64)    
         return response

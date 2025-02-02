@@ -9,11 +9,15 @@ class OrchestrationAdapter(Resource):
         self.orchestation_controller = orchestration_controller
         
     def post(self):
-        data = self._getBody(request)
-        response = self.orchestation_controller.service_execute(data['query'])
+        query, pdfbase64 = self._getBody(request)
+        response = self.orchestation_controller.service_execute(query, pdfbase64)
 
         return {"response": response}
     
     def _getBody(self, request):
         body = request.get_json()
-        return body
+        pdf_encode = body.get('pdf_encode', None)
+        query = body.get('query', None)
+        return query, pdf_encode
+
+        
