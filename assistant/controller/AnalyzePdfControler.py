@@ -1,21 +1,21 @@
+from utils.ProcessPDF import ProcessPDF
 from model.model import Model
-from service.RagService import RagService
 from utils.PromptManager import PromptManager
 
 prompt_manager = PromptManager()
 
-class RagController():
+class AnalyzePdfController():
     def __init__(self):
         self.llm = Model()
-        self.rag_service = RagService()
-        self.prompt = prompt_manager.get_prompt("rag_prompt")
+        self.process_pdf = ProcessPDF()
+        self.prompt = prompt_manager.get_prompt("financial_assistant_prompt")
         self._set_prompt()
 
     def _set_prompt(self):
         self.llm.set_prompt(self.prompt)
 
-    def service_execute(self, query):
-        context = self.rag_service.execute_rag(query)
+    def service_execute(self, query, pdf_base64):
+        context = self.process_pdf.get_pdf_info(pdf_base64)
         response = self.llm.invoke({
             "query": query,
             "context": context

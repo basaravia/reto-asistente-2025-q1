@@ -4,10 +4,14 @@ class AssistantService:
     def __init__(self, base_url):
         self.base_url = base_url
 
-    def post_request(self, endpoint, data):
+    def post_request(self, endpoint, query, pdfbase64):
         """Envía una solicitud POST a la API"""
         url = f"{self.base_url}{endpoint}"
         headers = {"Content-Type": "application/json"}
+        data = {
+            "query": query,
+            "pdf_encode": pdfbase64
+        }
         try:
             response = requests.post(url, json=data, headers=headers)
             
