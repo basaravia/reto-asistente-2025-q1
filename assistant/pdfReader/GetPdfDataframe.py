@@ -61,7 +61,7 @@ class GetPdfDataframe:
     
     def resumen(self,modelo:ChatOllama,user_input:str)->str:
         gastos,entradas,visitas = self.getTables()
-        inputSystem = """A continuación puedes encontrar la mayor cantidad de gastos de una persona:
+        inputSystem = """A continuación puedes encontrar la mayor cantidad de gastos obtenidos del estado de cuenta de una persona:
         {gastos}
         
         Ahora la mayor cantidad de ingresos de una persona: 
@@ -70,15 +70,15 @@ class GetPdfDataframe:
         Ahora puedes ver la mayor cantidad de visitas a un lugar:
         {visitas}
         
-        Dame un resumen de los gastos e ingresos de una persona, de una manera corta precisa y rapida, sin dar detalles de las transacciones"""
+        Dame un resumen de los gastos e ingresos de una persona, de una manera corta precisa y rapida, sin dar detalles de las transacciones, ten en cuenta que todo esta en dolares y responde siempre en español.
+        Tienes permitido dar recomendaciones en cuanto a gastos o inversiones.
+        Además agrega más ideas sobre como invertir su dinero, recuerda que debes ser bastante corto y preciso en las respuestas
+        """
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", inputSystem),
-            ("user", "Quiero un resumen de los gastos e ingresos de estas tablas además ayudame con lo siguiente: {user_input}")
+            ("user", "{user_input}")
         ])
         chain = prompt | modelo | StrOutputParser()
         respuesta=chain.invoke({"gastos": gastos, "entradas": entradas, "user_input": user_input,"visitas":visitas}).split("</think>")[1]
         return respuesta
-
-        
-        

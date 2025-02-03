@@ -1,3 +1,5 @@
 /assistant/__pycache__
 /assistant/uploads
 /tests
+.env
+**/__pycache__/**

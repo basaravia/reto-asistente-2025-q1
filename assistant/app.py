@@ -7,6 +7,7 @@ from Weaviate import delete_all_textos_pdf, send_all_pdfs_to_weaviate, delete_te
 from threading import Thread
 from graph import GraphWorkflow
 from datetime import datetime
+from researcher.Researcher import Researcher
 
 app = Flask(__name__)
 pipeline = GraphWorkflow()
@@ -86,18 +87,12 @@ def analyze_pdf():
 def shopping_advisor():
     """Asesor de compras basado en preferencias del usuario."""
     data = request.json
-    category = data.get("category", "general")
-    budget = data.get("budget", 0)
+    query = data.get("query", False)
+    if query:
+            return jsonify({"response": Researcher(query).research()})
+
     
-    recommendations = {
-        "electronics": ["Smartphone X", "Laptop Y", "Tablet Z"],
-        "fashion": ["Zapatos deportivos", "Camisa elegante", "Reloj clásico"],
-        "general": ["Cualquier producto de buena calidad dentro de tu presupuesto"]
-    }
-    
-    result = recommendations.get(category, ["Sin recomendaciones disponibles"])
-    
-    return jsonify({"category": category, "budget": budget, "recommendations": result})
+    return jsonify({"error": "verifique la forma de su query"})
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
